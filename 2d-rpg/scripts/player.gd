@@ -4,7 +4,13 @@ const SPEED = 200.0
 const ATTACK_RANGE = 150.0
 const ATTACK_COOLDOWN = 0.5
 
+var hp: int = 100
+var max_hp: int = 100
 var damage: int = 10
+var defense: int = 0
+var level: int = 1
+var xp: int = 0
+
 var target: Node2D = null
 var cooldown_timer: float = 0.0
 
@@ -42,19 +48,36 @@ func _try_select_target(mouse_pos: Vector2) -> void:
 		var obj = r["collider"].get_parent() if r["collider"].get_parent().has_method("take_damage") else r["collider"]
 		if obj.has_method("take_damage"):
 			target = obj
-			print("Ziel gesetzt: ", obj.name)
 			return
+
+func take_damage(amount: int) -> void:
+	var actual = max(0, amount - defense)
+	hp -= actual
+	if hp <= 0:
+		hp = 0
+		print("Spieler gestorben!")
+
+func gain_xp(amount: int) -> void:
+	xp += amount
+	var xp_needed = 100 * level
+	if xp >= xp_needed:
+		xp -= xp_needed
+		_level_up()
+
+func _level_up() -> void:
+	level += 1
+	max_hp = int(max_hp * 1.2)
+	hp = max_hp
+	damage += 2
+	print("LEVEL UP! Level ", level, " | HP: ", max_hp, " | Schaden: ", damage)
 
 func _try_attack() -> void:
 	if target == null or not is_instance_valid(target):
-		print("Kein Ziel!")
 		return
 	if cooldown_timer > 0.0:
-		print("Cooldown: ", snappedf(cooldown_timer, 0.01), "s")
 		return
 	var dist = global_position.distance_to(target.global_position)
 	if dist > ATTACK_RANGE:
-		print("Zu weit! Distanz: ", int(dist))
 		return
 	target.take_damage(damage)
 	cooldown_timer = ATTACK_COOLDOWN
